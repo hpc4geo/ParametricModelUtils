@@ -15,7 +15,7 @@ Tools for defining and running parametric computational models
 ## Usage
 
 ```
-git clone this_repo ParametricModelUtils 
+git clone https://github.com/hpc4geo/ParametricModelUtils.git 
 cd ParametricModelUtils
 export PYTHONPATH=$PWD
 ```
