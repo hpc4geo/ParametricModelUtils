@@ -1,0 +1,4 @@
+# param_name min_value max_value units
+a 0.0 1.0e32 1/m
+b 0.0 1.0e32 1/m
+w 0.0 1.0e32 1/s
