@@ -60,6 +60,7 @@ def test_probe():
 
 
 def test_batch():
+  np.random.seed(0) # For deterministic runs
 
   M = shModel()
   sch = ps.ParametricScheduler('./output-batch')
@@ -87,9 +88,11 @@ def test_batch2():
   p_vals = np.array(pv).reshape((ntraj,1))
   
 
-  sch.batched_schedule(p_vals, max_jobs=4, wait_time=5.0)
+  run, ignore = sch.batched_schedule(p_vals, max_jobs=4, wait_time=5.0)
   nscans = sch.wait_all(1.0)
 
+  print('run', run)
+  print('ignore', ignore)
 
 
 
