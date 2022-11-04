@@ -20,24 +20,22 @@ def python_task():
 
 class SlurmModel(pm.ParametricModel):
 
-  def __init__(self, input_def, nx, model_path, **kwargs):
+  def __init__(self, input_def, nx, executable, **kwargs):
     try:
       super().__init__(input_def, kwargs['name'])
     except:
       super().__init__(input_def)
     
     self.nx = nx
-    self.model_path = model_path
-    
-    os.makedirs(model_path, exist_ok=True)
-  
+    self.executable = executable
+    self.stdout = None
 
   def initialize(self):
-    os.makedirs(os.path.join(self.output_path, 'output'), exist_ok=True)
-
+    pass
 
   def finalize(self):
-      return
+    self.stdout = None
+    pass
 
 
   def evaluate(self, params):
@@ -45,15 +43,15 @@ class SlurmModel(pm.ParametricModel):
     
     sfilename = os.path.join(self.output_path, 'job.slurm')
     with open(sfilename, "w") as fp:
-      fp.write('# auto-generated slurm file')
+      fp.write('#!/bin/bash' + '\n')
+      fp.write('# auto-generated slurm file' + '\n')
+      fp.write('# mpiexec -n 3 ' + self.executable + '\n')
+      fp.write('ls ' + self.output_path + '\n')
+      fp.write('touch job.sentinel' + '\n')
 
-    cmd = 'sbatch ' + sfilename
-
-    #slurm_stdout = subprocess.run(["ls", self.output_path], capture_output=True)
-    #print(slurm_stdout.stdout.decode())
-    slurm_stdout = subprocess.run(["ls", self.output_path], capture_output=True, text=True)
-    print(slurm_stdout.stdout)
-
+    #slurm_stdout = subprocess.run(["sbatch", "job.slurm"], capture_output=True, text=True)
+    slurm_stdout = subprocess.run(["sh", "job.slurm"], capture_output=True, text=True)
+    self.stdout = slurm_stdout.stdout
 
   def exec_status(self):
     fname = os.path.join(self.output_path, 'job.slurm')

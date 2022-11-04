@@ -8,10 +8,12 @@ import numpy as np
 
 
 def test1():
-  ts = fm.SlurmModel('pinput_def_ts.csv', 32, 'ts_mesh')
+  ts = fm.SlurmModel('pinput_def_ts.csv', 32, 'fullpath/a.out')
   vals = [0.1, 0.2, 11.0]
   ts.initialize()
   ts.evaluate(vals)
+  print(ts.exec_status())
+  print(ts.stdout)
   ts.finalize()
 
   ts.name = "forward_slurm"
