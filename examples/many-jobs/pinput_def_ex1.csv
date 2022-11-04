@@ -1,0 +1,5 @@
+# param_name min_value max_value units
+velocity 1.0 10.0 "cm/yr"
+mu 0.0 0.1 "-"
+T0 273.0 2000.0 "K"
+n 0.0 3.3 "-"
