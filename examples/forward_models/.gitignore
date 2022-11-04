@@ -1,0 +1,5 @@
+job.sentinel
+job.slurm
+output*
+ts_mesh/
+*.pkl
