@@ -77,6 +77,7 @@ def test_batch():
 
 
 def test_batch2():
+  np.random.seed(0) # For deterministic runs
   
   M = shModel()
   sch = ps.ParametricScheduler('./output-batch')
