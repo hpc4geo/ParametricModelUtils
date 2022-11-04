@@ -97,35 +97,3 @@ class ParametricModel(ABC):
     view += '  ' + str(self.exec_status) + '\n'
     view += '  ' + str(self.get_observable)
     return view
-
-
-# Summary of tests
-# 1 -> try to instantiate abstract class
-# 2 -> check inheritence
-# 3 ->
-
-def test1(): # Test instantiating abstract base class fails
-  M = ParametricModel("pinput_def_ex1.csv")
-
-
-class PModel(ParametricModel):
-  def evaluate(self): pass
-  def exec_status(self): return ExecutionStatus.SUCCESS
-  def initialize(self):
-    print('PModel init')
-    self.output_path = "xyz"
-
-
-def test2(): # Test instantiating inherited class with appropriate methods is sucessful
-  M = PModel("pinput_def_ex1.csv")
-  print(M)
-  
-  M.initialize()
-  #M.output_path = "xxx"
-  print(M.output_path)
-
-if __name__ == "__main__":
-  #test1()
-  test2()
-
-  print(ExecutionStatus.ERROR)
