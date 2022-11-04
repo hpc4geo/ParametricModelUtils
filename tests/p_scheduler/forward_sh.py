@@ -24,7 +24,6 @@ class shModel(pm.ParametricModel):
 
 
   def evaluate(self, params):
-    self.P.write(params)
     p = self.P._convert(params)
     print(p)
     fp = open(os.path.join(self.output_path, 'demo_job.sh'), "w")
