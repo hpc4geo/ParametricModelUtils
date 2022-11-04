@@ -8,17 +8,18 @@ import os
 import numpy as np
 import subprocess
 
+
 # job_completed = false implies observable_valid = false
 
 # [1] Create slurm file. No slurm file imples job_completed = false, job_pending  = false, job_successful = false, observable_valid = false
 # [2] Call sbatch. Within slurm file, after each executable call `touch job.sentinel`.
 #     If slurm file exists but job.job.sentinel is not found found, job_pending = true and job_compl
-
 def python_task():
   pass
 
+
 class SlurmModel(pm.ParametricModel):
-  
+
   def __init__(self, input_def, nx, model_path, **kwargs):
     try:
       super().__init__(input_def, kwargs['name'])
@@ -66,17 +67,3 @@ class SlurmModel(pm.ParametricModel):
         return status.SUCCESS
       else:
         return status.UNDEFINED
-
-
-def test1():
-  ts = SlurmModel('pinput_def_ts.csv', 32, 'ts_mesh')
-  vals = [0.1, 0.2, 11.0]
-  ts.initialize()
-  ts.evaluate(vals)
-  ts.finalize()
-
-
-
-
-if __name__ == "__main__":
-  test1()

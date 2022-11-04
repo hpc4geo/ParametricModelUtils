@@ -8,6 +8,7 @@ import numpy as np
 import subprocess
 import time
 
+
 # This model
 #   [1] creates a bash script called demo_job.sh
 #   [2] calls the bash script
@@ -15,9 +16,7 @@ import time
 # The model exec_status is considered successful if job.sentinel exists.
 # The model exec_status is considered undefined if demo_job.sh exists but job.sentinel does not.
 # The model exec_status is considered to be an error if neither file (.sh or .sentinel) exists
-
 class shModel(pm.ParametricModel):
-
 
   def __init__(self, **kwargs):
     super().__init__('pinput_def_sh.csv', **kwargs)
@@ -46,6 +45,7 @@ class shModel(pm.ParametricModel):
     print(proc, 'wait time', p["T"])
     time.sleep(0.5)
 
+
   def exec_status(self):
     fname = os.path.join(self.output_path, 'job.sentinel')
     found = os.path.exists(fname)
@@ -55,16 +55,3 @@ class shModel(pm.ParametricModel):
     found = os.path.exists(fname)
     if found: return status.UNDEFINED
     else: return status.ERROR
-
-
-def test1():
-  M = shModel()
-  vals = np.array([2.0])
-  M.initialize()
-  M.evaluate(vals)
-  M.finalize()
-
-
-if __name__ == "__main__":
-  test1()
-  #test_schedule()

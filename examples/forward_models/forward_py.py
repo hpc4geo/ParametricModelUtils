@@ -11,6 +11,8 @@ class PyModel(pm.ParametricModel):
   
   def __init__(self, input_def, numbers, **kwargs):
     super().__init__(input_def, **kwargs)
+    #pm.ParametricModel.__init__(self, input_def, **kwargs)
+    #super(PyModel, self).__init__(input_def, **kwargs)
     
     self.coeff = list(numbers)
     self.exit_code_fname = 'pymodel.ierr'
@@ -103,22 +105,3 @@ class PyModel(pm.ParametricModel):
     model = PyModel(cmdline_args.param_def, cmdline_args.numbers)
     model.name = "default_PyModel"
     return model
-
-
-def test1(): # Check we can instantiate
-  coeffs = [2.3, 3.4, 5.66, 7.77]
-  M = PyModel("pinput_def_ex1.csv", coeffs)
-
-  p_vals = [1.0e3, -2.0, -3.0, -4.0]
-  M.initialize()
-  M.evaluate(p_vals)
-  M.finalize()
-  M.P.write_definition()
-
-  print('job status   :', M.exec_status())
-  print('observable      :', M.get_observable(), type(M.get_observable()))
-
-
-
-if __name__ == "__main__":
-  test1()
