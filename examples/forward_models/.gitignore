@@ -1,5 +1,10 @@
+obs_pymodel.txt
+pymodel.ierr
+demo_job.sh
 job.sentinel
 job.slurm
 output*
 ts_mesh/
 *.pkl
+parametric_def.csv
+parametric_def.hash
