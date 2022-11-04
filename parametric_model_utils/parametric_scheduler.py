@@ -10,9 +10,16 @@ from .parametric_model import ExecutionStatus as status
 
 class ParametricScheduler:
   """
-  The schedular takes a ParametricModel and runs instances of it with different parameter values.
-  The scheduler is stateless.
-  It does not store anything other than the path where to write all output.
+  The schedular takes an instance of a ParametricModel and passes it one or more parameter vectors (trajectory).
+  When a model is evaluated all output and metadata associated with the parameters are written into a unique directory.
+  When a job is evaluated, metadata about the job is cached.
+  When a new ParametricScheduler is created and existing output in `root_dir` exists, the cache is populated
+  with any existing valid model output found by recursively exploring `root_dir`.
+
+  Input
+  -----
+  root_dir: str
+    Path where all output associated with the model, including parameters defining the trajectory will be stored.
   """
 
   def __init__(self, root_dir="./"):
@@ -44,6 +51,31 @@ class ParametricScheduler:
 
 
   def get_job_output_path(self, p):
+    """
+    Get the output path associated with tracjectory `p`.
+    If trajectory `p` has not been evaluated previously, then the
+    output path is given by
+      `sch.root_dir / sch.output_path_prefix / param_hash(p)`
+    If the trajectory `p` has been evaluated previously, then the
+    cache is queried for the output path.
+
+    The output path is formed by doing the following
+      `os.path.join(relative_jdir, param_hash)`
+    where `relative_jdir` and `param_hash` are the returned values.
+
+    Input
+    -----
+    p: (list, dict, ndarray)
+      A single parameter vector (trajectory).
+
+    Output
+    ------
+    relative_jdir: str
+      Relative path where model output is written
+    param_hash: str
+      String identifier associated with the trajectory given by p.
+    """
+
     param_hash = self.P.get_identifier(p)
     relative_jdir = os.path.join(self.root_dir, self.output_path_prefix, param_hash)
 
@@ -58,7 +90,20 @@ class ParametricScheduler:
 
 
   def set_model(self, model):
-    
+    """
+    Provides the scheduler with a parameteric model.
+    The input `model` can be None. In this scenario, `self.root_dir`
+    is searched for a pickle file (identified by the extension `.pkl`)
+    and the model is attempted to be create by loading that pickle file.
+    If the file `parametric_def.csv` is found in `self.root_dir`, an
+    attempt to rebuild the cache using existing valid data located in
+    `self.root_dir` will occur.
+
+    Input
+    -----
+    model: (ParametricModel)
+    """
+
     if self.model is not None:
       raise RuntimeError('ParametricScheduler already has a model defined')
 
@@ -121,11 +166,30 @@ class ParametricScheduler:
 
   def filter_run_ignore_from_cache(self, params):
     """
-    Returns
-      `to_eval` np.ndarray filled with boolean values indicating whether param[i] should be run.
-      `run` dict defined by param_hash: [ [list-of-params], output_path, reason-job-is-to-be-run ]
-      `ignore` dict defined by param_hash: [ [list-of-params], output_path, reason-job-is-NOT-to-be-run ]
+    Given a set of trajectories, filter them into a set of trajcetories
+    to evaluate and set of trajectories to ignore (not evaluate).
+
+    Input
+    -----
+    params: ndarray
+      A collection of parameter vectors (trajectories).
+
+    Output
+    ------
+    to_eval: np.ndarray, shape = params.shape[0]
+      Array of boolean values indicating whether each param[i] should be run.
+    run: dict
+      Defines all trajectories to be evaluated.
+      The dictionary is defined by the following key: value pairs
+        `param_hash: [ [list-of-params], relative_output_path, reason-job-is-to-be-run ]`
+      where
+        `param_hash` is the result of calling `self.P.get_identifier(params[i, :])`
+    ignore: dict
+      Defines all trajectories which should not be evaluated.
+      The dictionary is defined by the following key: value pairs
+        `param_hash: [ [list-of-params], relative_output_path, reason-job-is-NOT-to-be-run ]`
     """
+
     run = dict()
     ignore = dict()
     
@@ -183,6 +247,30 @@ class ParametricScheduler:
 
 
   def run_jobs(self, params):
+    """
+    Evaluates the model given a collection of trajectories.
+    `run_jobs()` performs the following operations:
+      (1) Creates the unique output directory for the result of evaluating model(params[i]));
+      (2) Sets the value of `output_path` on the model, i.e. `self.M.output_path`;
+      (3) Writes out the params for the ith trajectory into the output directory in both CSV and JSON formats.
+          In addition the parameter name key is also written out in the output directory;
+      (4) Calls model `.initialize()`, `.evaluate()` and `.exec_status()`;
+      (5) Updates the schedulers cache;
+      (6) Calls model `.finalize()`;
+
+    Input
+    -----
+    params: ndarray
+      A collection of parameter vectors (trajectories).
+
+    Output
+    ------
+    tasks_run: dict
+      Defines all trajectories which were evaluated.
+      The dictionary is defined by the following key: value pairs
+        `param_hash: [ [list-of-params], relative_output_path ]`
+    """
+
     tasks_run = dict()
     
     nparam_instances = params.shape[0]
@@ -197,12 +285,12 @@ class ParametricScheduler:
       found = os.path.exists(abs_jdir)
       if found == False:
         ierr = pathlib.Path(abs_jdir).mkdir(parents=False, exist_ok=False)
-          
-      self.M.output_path = abs_jdir
-      self.M.initialize()
-        
+
       self.M.P.write(param_i, abs_jdir)
       self.M.P.write_json(param_i, abs_jdir)
+
+      self.M.output_path = abs_jdir
+      self.M.initialize()
       self.M.evaluate(param_i)
 
       # update object being returned
@@ -219,6 +307,10 @@ class ParametricScheduler:
 
 
   def schedule(self, params, force=False):
+    """
+    Schedule a collection of trajectories to be evaluated.
+    """
+
     if not force:
       to_eval, run, ignore = self.filter_run_ignore_from_cache(params)
       params_eval = np.array(params[to_eval, :])
@@ -231,6 +323,10 @@ class ParametricScheduler:
 
 
   def schedule_from_csv(self, fname):
+    """
+    Schedule a collection of trajectories (defined via a CSV file) to be evaluated.
+    """
+
     data = np.genfromtxt(fname, comments="#", delimiter=" ")
     print(data, data.dtype)
     # check data matches model parameter definition
@@ -244,6 +340,10 @@ class ParametricScheduler:
 
 
   def batched_schedule(self, params, max_jobs=1, wait_time=60.0, force=False):
+    """
+    Schedule a collection of trajectories to be evaluated which will be executed
+    in batches of a given size.
+    """
 
     udef = dict(self.cache[status.UNDEFINED])
     L = len(udef)
@@ -278,6 +378,21 @@ class ParametricScheduler:
 
 
   def wait_all(self, wait_time=60.0):
+    """
+    Wait until all models return an value from `.exec_status()` which
+    is either SUCCESS or ERROR.
+
+    Input
+    -----
+    wait_time: float
+      Time in seconds to wait between updating the cache.
+
+    Output
+    ------
+    count: int
+      Number of cache updates performed.
+    """
+
     udef = dict(self.cache[status.UNDEFINED])
     L = len(udef)
     count = 0
@@ -345,8 +460,22 @@ class ParametricScheduler:
     """
     Create a dict with three keys for successful, failed and undefined jobs.
     `valid` is returned from collect_valid_trajectories()
+
+    Input
+    -----
+    valid: dict
+      Collection of valid model trajectories. The term valid means that the parameter definition 
+      associated with `model` is consistent with the definition found in a data directory.
+    model: ParametricModel
+      The target parametric model.
+
+    Output
+    ------
+    cache: dict
+      Object classifies all trajectories in terms of their exectution status, i.e. SUCCESS
+      ERROR or UNDEFINED.
     """
-    
+
     def get(model, job):
       model.output_path = job[1]
       model.initialize()
@@ -401,10 +530,11 @@ class ParametricScheduler:
 
   def cache_update_all(self):
     """
-    Check that everything in the cached ERROR and UNDEFINED dict are still in those slots.
-    If not, move these jobs
+    Check that cached jobs associated with the `.exec_status()` ERROR
+    and or UNDEFINED are still returning the same `.exec_status()` value.
+    If the value of `.exec_status()` changes, the cache is updated.
     """
-    
+
     D = dict( self.cache[status.ERROR] )
     for (key, jvals) in D.items():
       params_hash = key
@@ -452,10 +582,19 @@ class ParametricScheduler:
   def probe(self, wait=2.0):
     """
     Sleep for `wait` seconds and then update the cache.
-    Return:
-    - Number of new jobs found with exec_status() = SUCCESS after
-    waiting for `wait` seconds.
+
+    Input
+    -----
+    wait: float
+      Time to wait in seconds between updating the cache.
+
+    Output
+    ------
+    nnew_success: int
+      Number of new jobs found with `.exec_status()` = SUCCESS after
+      waiting for `wait` seconds.
     """
+
     jobs_init = len( self.cache[status.SUCCESS] )
     time.sleep(wait)
     self.cache_update_all()
@@ -466,8 +605,14 @@ class ParametricScheduler:
 
   def flush(self):
     """
-    Run all cached jobs with exec_status = ERROR.
+    Run all cached jobs with `.exec_status()` = ERROR.
+
+    Output
+    ------
+    nnew_success: int
+      Number of new jobs added to the cache which return .exec_status() = SUCCESS
     """
+
     jobs_init = len( self.cache[status.SUCCESS] )
     
     D = dict( self.cache[status.ERROR] )
@@ -492,6 +637,17 @@ class ParametricScheduler:
 
 
   def cache_generate_log(self, logfname='jobs_log.csv', jstatus=status.SUCCESS):
+    """
+    Generate a CSV file given jobs registered within the cache.
+
+    Input
+    -----
+    logfname: str
+      Filename of log file generated.
+    jstatus: enum (ExecutionStatus)
+      Defines which jobs from the cache will be filtered into the CSV file.
+    """
+
     import csv
  
     pathname = self.root_dir
