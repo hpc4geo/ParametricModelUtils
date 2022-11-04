@@ -252,12 +252,17 @@ class ParametricScheduler:
     e = min( max_jobs - L, len(params) )
     _params = np.array(params) # copy
     its = 1
+    run = dict()
+    ignore = dict()
+
     while len(_params) != 0:
       print('s', s, 'e', e)
       _p = _params[s:e, :]
       print(_p)
       _params = np.array(_params[e:, :])
-      self.schedule(_p)
+      _run, _ignore = self.schedule(_p)
+      run.update( _run )
+      ignore.update( _ignore )
       udef = dict(self.cache[status.UNDEFINED])
       L = len(udef)
       print('iteration', its, 'len(UDEF)', L)
@@ -269,7 +274,7 @@ class ParametricScheduler:
       e = min( max_jobs - L, len(_params) )
       its += 1
     
-    return None, None
+    return run, ignore
 
 
   def wait_all(self, wait_time=60.0):
