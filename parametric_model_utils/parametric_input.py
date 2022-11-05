@@ -11,14 +11,14 @@ class ParametricInput:
   
   def _parse(self, inputfile):
     """
-    Load a CSV file defining the quantities
+    Load a CSV file defining the following quantities
     parameter name, lower bound, upper bound, unit.
     _parse() defines and initializes the class attributes
-    `param_names` (list)
-    `param_bounds` (OrderedDict)
-    `param_units` (OrderedDict)
-    `param_bounds` and `param_units` has keys which are given
-    by each element of `param_names`.
+      `.param_names` (list)
+      `.param_bounds` (OrderedDict)
+      `.param_units` (OrderedDict)
+      `.param_bounds` and `.param_units` have keys which are given
+    by each element of `.param_names`.
     """
     data = np.genfromtxt(inputfile, comments="#", delimiter=" ", dtype=str)
     data = np.atleast_2d(data)
@@ -35,15 +35,32 @@ class ParametricInput:
       self.param_units[k] = unit.replace('"','')
       i += 1
 
-
-  def __init__(self, inputfile, hash_paths=True):
+  def __init__(self, inputfile, _params=None, hash_paths=True):
+    """
+    Example usage
+      `
+      parameter = ParametricInput( 'input.csv' )
+      parameter = ParametricInput( None, _params=[ {"name": "vx", "bounds":[0,1.0], "units":"m/s"},
+                                                   {"name": "eta", "bounds":[0,1.0e4], "units":"Pas"} ] )
+      `
+    """
     self.hash_paths = hash_paths
     
     self.param_names = list()
     self.param_bounds = OrderedDict()
     self.param_units = OrderedDict()
-    self._parse(inputfile)
     
+    if inputfile is not None: # from file
+      self._parse(inputfile)
+    else: # build from input dict
+      self.param_names, bb, uu = list(), list(), list()
+      for pn in _params:
+        self.param_names.append( pn["name"] )
+        bb.append( pn["bounds"] )
+        uu.append( pn["units"] )
+      self.param_bounds = OrderedDict( zip(self.param_names, bb) )
+      self.param_units = OrderedDict( zip(self.param_names, uu) )
+      
     self.n_inputs = len(self.param_names)
     self.phash = self.generate_phash()
 
