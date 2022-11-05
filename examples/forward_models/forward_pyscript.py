@@ -28,6 +28,10 @@ class PyscriptModel(pm.ParametricModel):
     proc = subprocess.Popen( ["python", "sum_numbers.py", str(p['a']), str(p['b']), str(p['c'])],
                             stdin=None, stdout=None, stderr=None)
 
+
   def exec_status(self):
-    return status.SUCCESS
+    fname = os.path.join(self.output_path, 'obs.txt')
+    found = os.path.exists(fname)
+    if found: return status.SUCCESS
+    else:     return status.UNDEFINED
 
