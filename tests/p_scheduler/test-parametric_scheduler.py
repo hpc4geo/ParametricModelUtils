@@ -228,25 +228,6 @@ def test3():
   jobs.push(d)
 
 
-def test_batch():
-  coeffs = [2.3, 3.4, 5.66, 7.77]
-  M = fm.PyModel('pinput_def_ex1.csv', coeffs)
-  
-  sch = ps.ParametricScheduler('./output/batch')
-  sch.set_model(M)
-
-  p_vals = np.array([[1.0e3, 2.0, 3.4, 14.0],
-                    [1.0e4, 2.1, 3.5, 16.0],
-                    [1.0e5, 2.2, 3.6, 18.0]])
-  
-  jrun, jignore = sch.schedule(p_vals)
-
-  udef = dict(sch.cache[status.SUCCESS])
-  print(len(udef))
-
-  print(sch.wait_all(1.0))
-
-
 if __name__ == "__main__":
   #test_push()
   #test_smart_push()
@@ -256,6 +237,4 @@ if __name__ == "__main__":
   #test_schedule_2()
   #test_schedule_prefix_reload()
 
-  #test_schedule_prefix()
-
-  test_batch()
+  test_schedule_prefix()
