@@ -13,11 +13,11 @@ class PyscriptModel(pm.ParametricModel):
   
   def __init__(self, **kwargs):
     
-    P = ParametricInput(None, _params=[
-                                       {"name": 'a', "bounds":[0.0, 10.0], "units":'-'},
-                                       {"name": 'b', "bounds":[0.0, 2.0], "units":'-'},
-                                       {"name": 'c', "bounds":[-10.0, 1.0], "units":'-'},
-                                       ] )
+    P = ParametricInput([
+                          {"name": 'a', "bounds":[0.0, 10.0], "units":'-'},
+                          {"name": 'b', "bounds":[0.0, 2.0], "units":'-'},
+                          {"name": 'c', "bounds":[-10.0, 1.0], "units":'-'},
+                        ] )
     P.write_definition()
     os.rename("parametric_def.csv", "pyscript_parametric_def.csv")
     super().__init__("pyscript_parametric_def.csv", **kwargs)

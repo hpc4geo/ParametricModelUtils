@@ -35,14 +35,14 @@ class ParametricInput:
       self.param_units[k] = unit.replace('"','')
       i += 1
 
-  def __init__(self, inputfile, _params=None, hash_paths=True):
+  def __init__(self, inputdef, hash_paths=True):
     """
     Example usage
-      `
+      ```
       parameter = ParametricInput( 'input.csv' )
-      parameter = ParametricInput( None, _params=[ {"name": "vx", "bounds":[0,1.0], "units":"m/s"},
-                                                   {"name": "eta", "bounds":[0,1.0e4], "units":"Pas"} ] )
-      `
+      parameter = ParametricInput( [ {"name": "vx", "bounds":[0,1.0], "units":"m/s"},
+                                     {"name": "eta", "bounds":[0,1.0e4], "units":"Pas"} ] )
+      ```
     """
     self.hash_paths = hash_paths
     
@@ -50,9 +50,15 @@ class ParametricInput:
     self.param_bounds = OrderedDict()
     self.param_units = OrderedDict()
     
-    if inputfile is not None: # from file
+    if isinstance(inputdef, str) == True:
+      inputfile = inputdef
       self._parse(inputfile)
-    else: # build from input dict
+    elif isinstance(inputdef, list) == True:
+      _params = inputdef
+      _isdictlist = [ _params[i] for i in range(len(_params)) if isinstance(_params[i], dict)]
+      if len(_isdictlist) != len(_params):
+        raise RuntimeError('Input list must only contain dicts')
+      
       self.param_names, bb, uu = list(), list(), list()
       for pn in _params:
         self.param_names.append( pn["name"] )
@@ -60,7 +66,9 @@ class ParametricInput:
         uu.append( pn["units"] )
       self.param_bounds = OrderedDict( zip(self.param_names, bb) )
       self.param_units = OrderedDict( zip(self.param_names, uu) )
-      
+    else:
+      raise ValueError('`inputdef` must be str or list-of-dict')
+    
     self.n_inputs = len(self.param_names)
     self.phash = self.generate_phash()
 
@@ -273,7 +281,7 @@ class ParametricInput:
   # param_name min_value max_value units
   def write_definition(self, output_path=""):
     """
-    Writes a CSV description of the parameter definition that was parsed by the class constructor.
+    Writes a CSV description of the parameter definition.
     """
     fname = os.path.join(output_path, 'parametric_def.csv')
     fp = open(fname, "w")
