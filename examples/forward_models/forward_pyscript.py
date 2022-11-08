@@ -32,12 +32,18 @@ class PyscriptModel(pm.ParametricModel):
   def evaluate(self, params):
     p = self.P._convert(params)
     proc = subprocess.Popen( ["python", "sum_numbers.py", str(p['a']), str(p['b']), str(p['c'])],
-                            stdin=None, stdout=None, stderr=None)
+                            stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
   def exec_status(self):
     fname = os.path.join(self.output_path, 'obs.txt')
     found = os.path.exists(fname)
     if found: return status.SUCCESS
-    else:     return status.UNDEFINED
+    else:
+      fname = os.path.join(self.output_path, 'sum_numbers.error')
+      found = os.path.exists(fname)
+      if found:
+        return status.ERROR
+      else:
+        return status.UNDEFINED
 
